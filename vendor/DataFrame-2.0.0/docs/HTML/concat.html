@@ -1,0 +1,399 @@
+<!--
+Copyright (c) 2019-2026, Hossein Moein
+All rights reserved.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+* Redistributions of source code must retain the above copyright
+  notice, this list of conditions and the following disclaimer.
+* Redistributions in binary form must reproduce the above copyright
+  notice, this list of conditions and the following disclaimer in the
+  documentation and/or other materials provided with the distribution.
+* Neither the name of Hossein Moein and/or the DataFrame nor the
+  names of its contributors may be used to endorse or promote products
+  derived from this software without specific prior written permission.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL Hossein Moein BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+<!DOCTYPE html>
+<html>
+<body>
+  <table align="center" border="1">
+
+    <tr bgcolor="lightblue">
+      <th>Signature</th> <th>Description</th>
+    </tr>
+    <tr bgcolor="lightgrey">
+      <td bgcolor="maroon"> <font color="white">
+        <PRE><B>
+enum class concat_policy : unsigned char  {
+    // Only apply concatenation to the common columns
+    //
+    common_columns = 1,
+
+    // Concatenate all columns. If a column does not exist in self,
+    // create one in the result and prepend with nan
+    //
+    all_columns = 2,
+
+    // The result will have all the columns in self,
+    // but only common columns and index are concatenated
+    //
+    lhs_and_common_columns = 3,
+};</B></PRE> </font>
+      </td>
+      <td>
+        Enumerated type to specify joining/concatenating one DataFrame to the end of another.
+      </td>
+    </tr>
+
+  </table>
+
+  <BR>
+
+  <table align="center" border="1">
+
+    <tr bgcolor="lightblue">
+        <th>Signature</th> <th>Description</th> <th>Parameters</th>
+    </tr>
+    <tr bgcolor="lightgrey">
+      <td bgcolor="maroon"> <font color="white">
+        <PRE><B>
+template&lt;typename RHS_T, typename ... Ts&gt;
+DataFrame&lt;I, H&gt;
+concat(const RHS_T &amp;rhs,
+       concat_policy cp = concat_policy::all_columns) const;
+        </B></PRE></font>
+      </td>
+      <td>
+        It concatenates rhs to the end of self and returns the result as another DataFrame.<BR>
+        Concatenation is done based on policy
+      </td>
+      <td>
+        <B>RHS_T</B>: Type of DataFrame rhs<BR>
+        <B>Ts</B>: List all the types of all data columns. A type should be specified in the list only once.<BR>
+        <B>rhs</B>: The rhs DataFrame<BR>
+        <B>cp</B>: Concatenation policy. See above<BR>
+      </td>
+    </tr>
+
+    <tr bgcolor="lightgrey">
+      <td bgcolor="maroon"> <font color="white">
+        <PRE><B>
+template&lt;typename RHS_T, typename ... Ts&gt;
+PtrView
+concat_view(
+    RHS_T &amp;rhs,
+    concat_policy cp = concat_policy::common_columns);
+        </B></PRE></font>
+      </td>
+      <td>
+        This behaves just like concat(), but retunrs a view instead of another DataFrame.<BR>
+      </td>
+      <td>
+        <B>RHS_T</B>: Type of DataFrame rhs<BR>
+        <B>Ts</B>: List all the types of all data columns. A type should be specified in the list only once.<BR>
+        <B>rhs</B>: The rhs DataFrame<BR>
+        <B>cp</B>: Concatenation policy. See above<BR>
+      </td>
+    </tr>
+
+
+    <tr bgcolor="lightgrey">
+      <td bgcolor="maroon"> <font color="white">
+        <PRE><B>
+template&lt;typename RHS_T, typename ... Ts&gt;
+ConstPtrView
+concat_view(
+    RHS_T &amp;rhs,
+    concat_policy cp = concat_policy::common_columns) const;
+        </B></PRE></font>
+      </td>
+      <td>
+          Same as above view, but it returns a <I>const</I> view. You can not change data in const views. But if the data is changed in the original DataFrame or through another view, it is refelcted in the const view.       
+      </td>
+      <td>
+        <B>RHS_T</B>: Type of DataFrame rhs<BR>
+        <B>Ts</B>: List all the types of all data columns. A type should be specified in the list only once.<BR>
+        <B>rhs</B>: The rhs DataFrame<BR>
+        <B>cp</B>: Concatenation policy. See above<BR>
+      </td>
+    </tr>
+
+    <tr bgcolor="lightgrey">
+      <td bgcolor="maroon"> <font color="white">
+        <PRE><B>
+template&lt;typename RHS_T, typename ... Ts&gt;
+void
+self_concat(const RHS_T &amp;rhs, bool add_new_columns = true);
+        </B></PRE></font>
+      </td>
+      <td>
+        This is similar to concat() method but it is applied to self. It changes self.
+      </td>
+      <td>
+        <B>RHS_T</B>: Type of DataFrame rhs<BR>
+        <B>Ts</B>: List all the types of all data columns. A type should be specified in the list only once.<BR>
+        <B>rhs</B>: The rhs DataFrame<BR>
+        <B>add_new_columns</B>: If true, it creates new columns in self and prepend them with nan
+      </td>
+    </tr>
+
+  </table>
+
+<!-- HTML generated using hilite.me --><div style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-width:.1em .1em .1em .8em;padding:.2em .6em;"><pre style="margin: 0; line-height: 125%"><span style="color: #008800; font-weight: bold">static</span> <span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">test_self_concat</span>()  {
+
+    std<span style="color: #333333">::</span>cout <span style="color: #333333">&lt;&lt;</span> <span style="background-color: #fff0f0">&quot;</span><span style="color: #666666; font-weight: bold; background-color: #fff0f0">\n</span><span style="background-color: #fff0f0">Testing self_concat( ) ...&quot;</span> <span style="color: #333333">&lt;&lt;</span> std<span style="color: #333333">::</span>endl;
+
+    MyDataFrame df1;
+
+    std<span style="color: #333333">::</span>vector<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">unsigned</span> <span style="color: #333399; font-weight: bold">long</span><span style="color: #333333">&gt;</span>  idxvec <span style="color: #333333">=</span>
+        { <span style="color: #0000DD; font-weight: bold">1UL</span>, <span style="color: #0000DD; font-weight: bold">2UL</span>, <span style="color: #0000DD; font-weight: bold">3UL</span>, <span style="color: #0000DD; font-weight: bold">10UL</span>, <span style="color: #0000DD; font-weight: bold">5UL</span>, <span style="color: #0000DD; font-weight: bold">7UL</span>, <span style="color: #0000DD; font-weight: bold">8UL</span>, <span style="color: #0000DD; font-weight: bold">12UL</span>, <span style="color: #0000DD; font-weight: bold">9UL</span>, <span style="color: #0000DD; font-weight: bold">12UL</span>, <span style="color: #0000DD; font-weight: bold">10UL</span>, <span style="color: #0000DD; font-weight: bold">13UL</span>, <span style="color: #0000DD; font-weight: bold">10UL</span>, <span style="color: #0000DD; font-weight: bold">15UL</span>, <span style="color: #0000DD; font-weight: bold">14UL</span> };
+    std<span style="color: #333333">::</span>vector<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>         dblvec <span style="color: #333333">=</span>
+        { <span style="color: #6600EE; font-weight: bold">0.0</span>, <span style="color: #6600EE; font-weight: bold">15.0</span>, <span style="color: #6600EE; font-weight: bold">14.0</span>, <span style="color: #6600EE; font-weight: bold">2.0</span>, <span style="color: #6600EE; font-weight: bold">1.0</span>, <span style="color: #6600EE; font-weight: bold">12.0</span>, <span style="color: #6600EE; font-weight: bold">11.0</span>, <span style="color: #6600EE; font-weight: bold">8.0</span>, <span style="color: #6600EE; font-weight: bold">7.0</span>, <span style="color: #6600EE; font-weight: bold">6.0</span>, <span style="color: #6600EE; font-weight: bold">5.0</span>, <span style="color: #6600EE; font-weight: bold">4.0</span>, <span style="color: #6600EE; font-weight: bold">3.0</span>, <span style="color: #6600EE; font-weight: bold">9.0</span>, <span style="color: #6600EE; font-weight: bold">10.0</span> };
+    std<span style="color: #333333">::</span>vector<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>         dblvec2 <span style="color: #333333">=</span>
+        { <span style="color: #6600EE; font-weight: bold">100.0</span>, <span style="color: #6600EE; font-weight: bold">101.0</span>, <span style="color: #6600EE; font-weight: bold">102.0</span>, <span style="color: #6600EE; font-weight: bold">103.0</span>, <span style="color: #6600EE; font-weight: bold">104.0</span>, <span style="color: #6600EE; font-weight: bold">105.0</span>, <span style="color: #6600EE; font-weight: bold">106.55</span>, <span style="color: #6600EE; font-weight: bold">107.34</span>, <span style="color: #6600EE; font-weight: bold">1.8</span>, <span style="color: #6600EE; font-weight: bold">111.0</span>, <span style="color: #6600EE; font-weight: bold">112.0</span>, <span style="color: #6600EE; font-weight: bold">113.0</span>, <span style="color: #6600EE; font-weight: bold">114.0</span>, <span style="color: #6600EE; font-weight: bold">115.0</span>, <span style="color: #6600EE; font-weight: bold">116.0</span> };
+    std<span style="color: #333333">::</span>vector<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">int</span><span style="color: #333333">&gt;</span>            intvec <span style="color: #333333">=</span> { <span style="color: #0000DD; font-weight: bold">1</span>, <span style="color: #0000DD; font-weight: bold">2</span>, <span style="color: #0000DD; font-weight: bold">3</span>, <span style="color: #0000DD; font-weight: bold">4</span>, <span style="color: #0000DD; font-weight: bold">5</span>, <span style="color: #0000DD; font-weight: bold">8</span>, <span style="color: #0000DD; font-weight: bold">6</span>, <span style="color: #0000DD; font-weight: bold">7</span>, <span style="color: #0000DD; font-weight: bold">11</span>, <span style="color: #0000DD; font-weight: bold">14</span>, <span style="color: #0000DD; font-weight: bold">9</span>, <span style="color: #0000DD; font-weight: bold">10</span>, <span style="color: #0000DD; font-weight: bold">15</span>, <span style="color: #0000DD; font-weight: bold">12</span>, <span style="color: #0000DD; font-weight: bold">13</span> };
+    std<span style="color: #333333">::</span>vector<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>    strvec <span style="color: #333333">=</span>
+        { <span style="background-color: #fff0f0">&quot;zz&quot;</span>, <span style="background-color: #fff0f0">&quot;bb&quot;</span>, <span style="background-color: #fff0f0">&quot;cc&quot;</span>, <span style="background-color: #fff0f0">&quot;ww&quot;</span>, <span style="background-color: #fff0f0">&quot;ee&quot;</span>, <span style="background-color: #fff0f0">&quot;ff&quot;</span>, <span style="background-color: #fff0f0">&quot;gg&quot;</span>, <span style="background-color: #fff0f0">&quot;hh&quot;</span>, <span style="background-color: #fff0f0">&quot;ii&quot;</span>, <span style="background-color: #fff0f0">&quot;jj&quot;</span>, <span style="background-color: #fff0f0">&quot;kk&quot;</span>, <span style="background-color: #fff0f0">&quot;ll&quot;</span>, <span style="background-color: #fff0f0">&quot;mm&quot;</span>, <span style="background-color: #fff0f0">&quot;nn&quot;</span>, <span style="background-color: #fff0f0">&quot;oo&quot;</span> };
+
+    df1.load_data(std<span style="color: #333333">::</span>move(idxvec),
+                  std<span style="color: #333333">::</span>make_pair(<span style="background-color: #fff0f0">&quot;dbl_col&quot;</span>, dblvec),
+                  std<span style="color: #333333">::</span>make_pair(<span style="background-color: #fff0f0">&quot;int_col&quot;</span>, intvec),
+                  std<span style="color: #333333">::</span>make_pair(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>, strvec));
+
+    MyDataFrame df2 <span style="color: #333333">=</span> df1;
+
+    df2.load_column(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>, std<span style="color: #333333">::</span>move(dblvec2));
+
+    df1.self_concat<span style="color: #333333">&lt;</span>decltype(df2), <span style="color: #333399; font-weight: bold">double</span>, <span style="color: #333399; font-weight: bold">int</span>, std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(df2, <span style="color: #007020">true</span>);
+    assert(df1.get_index().size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(df1.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>).size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(df1.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col&quot;</span>).size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(df1.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>).size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(df1.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">int</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;int_col&quot;</span>).size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(df1.get_index()[<span style="color: #0000DD; font-weight: bold">0</span>] <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">1</span>);
+    assert(df1.get_index()[<span style="color: #0000DD; font-weight: bold">14</span>] <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">14</span>);
+    assert(df1.get_index()[<span style="color: #0000DD; font-weight: bold">15</span>] <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">1</span>);
+    assert(df1.get_index()[<span style="color: #0000DD; font-weight: bold">29</span>] <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">14</span>);
+    assert(std<span style="color: #333333">::</span>isnan(df1.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>)[<span style="color: #0000DD; font-weight: bold">0</span>]));
+    assert(std<span style="color: #333333">::</span>isnan(df1.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>)[<span style="color: #0000DD; font-weight: bold">14</span>]));
+    assert(df1.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>)[<span style="color: #0000DD; font-weight: bold">15</span>] <span style="color: #333333">==</span> <span style="color: #6600EE; font-weight: bold">100.0</span>);
+    assert(df1.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>)[<span style="color: #0000DD; font-weight: bold">29</span>] <span style="color: #333333">==</span> <span style="color: #6600EE; font-weight: bold">116.0</span>);
+    assert(df1.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">0</span>] <span style="color: #333333">==</span> <span style="background-color: #fff0f0">&quot;zz&quot;</span>);
+    assert(df1.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">14</span>] <span style="color: #333333">==</span> <span style="background-color: #fff0f0">&quot;oo&quot;</span>);
+    assert(df1.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">15</span>] <span style="color: #333333">==</span> <span style="background-color: #fff0f0">&quot;zz&quot;</span>);
+    assert(df1.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">int</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;int_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">0</span>] <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">1</span>);
+    assert(df1.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">int</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;int_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">14</span>] <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">13</span>);
+    assert(df1.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">int</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;int_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">15</span>] <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">1</span>);
+}
+
+<span style="color: #888888">// -----------------------------------------------------------------------------</span>
+
+<span style="color: #008800; font-weight: bold">static</span> <span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">test_concat</span>()  {
+
+    std<span style="color: #333333">::</span>cout <span style="color: #333333">&lt;&lt;</span> <span style="background-color: #fff0f0">&quot;</span><span style="color: #666666; font-weight: bold; background-color: #fff0f0">\n</span><span style="background-color: #fff0f0">Testing concat( ) ...&quot;</span> <span style="color: #333333">&lt;&lt;</span> std<span style="color: #333333">::</span>endl;
+
+    MyDataFrame df1;
+
+    std<span style="color: #333333">::</span>vector<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">unsigned</span> <span style="color: #333399; font-weight: bold">long</span><span style="color: #333333">&gt;</span>  idxvec <span style="color: #333333">=</span>
+        { <span style="color: #0000DD; font-weight: bold">1UL</span>, <span style="color: #0000DD; font-weight: bold">2UL</span>, <span style="color: #0000DD; font-weight: bold">3UL</span>, <span style="color: #0000DD; font-weight: bold">10UL</span>, <span style="color: #0000DD; font-weight: bold">5UL</span>, <span style="color: #0000DD; font-weight: bold">7UL</span>, <span style="color: #0000DD; font-weight: bold">8UL</span>, <span style="color: #0000DD; font-weight: bold">12UL</span>, <span style="color: #0000DD; font-weight: bold">9UL</span>, <span style="color: #0000DD; font-weight: bold">12UL</span>, <span style="color: #0000DD; font-weight: bold">10UL</span>, <span style="color: #0000DD; font-weight: bold">13UL</span>, <span style="color: #0000DD; font-weight: bold">10UL</span>, <span style="color: #0000DD; font-weight: bold">15UL</span>, <span style="color: #0000DD; font-weight: bold">14UL</span> };
+    std<span style="color: #333333">::</span>vector<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>         dblvec <span style="color: #333333">=</span>
+        { <span style="color: #6600EE; font-weight: bold">0.0</span>, <span style="color: #6600EE; font-weight: bold">15.0</span>, <span style="color: #6600EE; font-weight: bold">14.0</span>, <span style="color: #6600EE; font-weight: bold">2.0</span>, <span style="color: #6600EE; font-weight: bold">1.0</span>, <span style="color: #6600EE; font-weight: bold">12.0</span>, <span style="color: #6600EE; font-weight: bold">11.0</span>, <span style="color: #6600EE; font-weight: bold">8.0</span>, <span style="color: #6600EE; font-weight: bold">7.0</span>, <span style="color: #6600EE; font-weight: bold">6.0</span>, <span style="color: #6600EE; font-weight: bold">5.0</span>, <span style="color: #6600EE; font-weight: bold">4.0</span>, <span style="color: #6600EE; font-weight: bold">3.0</span>,
+          <span style="color: #6600EE; font-weight: bold">9.0</span>, <span style="color: #6600EE; font-weight: bold">10.0</span> };
+    std<span style="color: #333333">::</span>vector<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>         dblvec2 <span style="color: #333333">=</span>
+        { <span style="color: #6600EE; font-weight: bold">100.0</span>, <span style="color: #6600EE; font-weight: bold">101.0</span>, <span style="color: #6600EE; font-weight: bold">102.0</span>, <span style="color: #6600EE; font-weight: bold">103.0</span>, <span style="color: #6600EE; font-weight: bold">104.0</span>, <span style="color: #6600EE; font-weight: bold">105.0</span>, <span style="color: #6600EE; font-weight: bold">106.55</span>, <span style="color: #6600EE; font-weight: bold">107.34</span>, <span style="color: #6600EE; font-weight: bold">1.8</span>, <span style="color: #6600EE; font-weight: bold">111.0</span>, <span style="color: #6600EE; font-weight: bold">112.0</span>, <span style="color: #6600EE; font-weight: bold">113.0</span>, <span style="color: #6600EE; font-weight: bold">114.0</span>, <span style="color: #6600EE; font-weight: bold">115.0</span>, <span style="color: #6600EE; font-weight: bold">116.0</span> };
+    std<span style="color: #333333">::</span>vector<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">int</span><span style="color: #333333">&gt;</span>            intvec <span style="color: #333333">=</span> { <span style="color: #0000DD; font-weight: bold">1</span>, <span style="color: #0000DD; font-weight: bold">2</span>, <span style="color: #0000DD; font-weight: bold">3</span>, <span style="color: #0000DD; font-weight: bold">4</span>, <span style="color: #0000DD; font-weight: bold">5</span>, <span style="color: #0000DD; font-weight: bold">8</span>, <span style="color: #0000DD; font-weight: bold">6</span>, <span style="color: #0000DD; font-weight: bold">7</span>, <span style="color: #0000DD; font-weight: bold">11</span>, <span style="color: #0000DD; font-weight: bold">14</span>, <span style="color: #0000DD; font-weight: bold">9</span>, <span style="color: #0000DD; font-weight: bold">10</span>, <span style="color: #0000DD; font-weight: bold">15</span>, <span style="color: #0000DD; font-weight: bold">12</span>, <span style="color: #0000DD; font-weight: bold">13</span> };
+    std<span style="color: #333333">::</span>vector<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>    strvec <span style="color: #333333">=</span>
+        { <span style="background-color: #fff0f0">&quot;zz&quot;</span>, <span style="background-color: #fff0f0">&quot;bb&quot;</span>, <span style="background-color: #fff0f0">&quot;cc&quot;</span>, <span style="background-color: #fff0f0">&quot;ww&quot;</span>, <span style="background-color: #fff0f0">&quot;ee&quot;</span>, <span style="background-color: #fff0f0">&quot;ff&quot;</span>, <span style="background-color: #fff0f0">&quot;gg&quot;</span>, <span style="background-color: #fff0f0">&quot;hh&quot;</span>, <span style="background-color: #fff0f0">&quot;ii&quot;</span>, <span style="background-color: #fff0f0">&quot;jj&quot;</span>, <span style="background-color: #fff0f0">&quot;kk&quot;</span>, <span style="background-color: #fff0f0">&quot;ll&quot;</span>, <span style="background-color: #fff0f0">&quot;mm&quot;</span>, <span style="background-color: #fff0f0">&quot;nn&quot;</span>, <span style="background-color: #fff0f0">&quot;oo&quot;</span> };
+
+    df1.load_data(std<span style="color: #333333">::</span>move(idxvec),
+                  std<span style="color: #333333">::</span>make_pair(<span style="background-color: #fff0f0">&quot;dbl_col&quot;</span>, dblvec),
+                  std<span style="color: #333333">::</span>make_pair(<span style="background-color: #fff0f0">&quot;int_col&quot;</span>, intvec),
+                  std<span style="color: #333333">::</span>make_pair(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>, strvec));
+
+    MyDataFrame df2 <span style="color: #333333">=</span> df1;
+
+    df2.load_column(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>, std<span style="color: #333333">::</span>move(dblvec2));
+
+    <span style="color: #008800; font-weight: bold">auto</span>    result1 <span style="color: #333333">=</span> df1.concat<span style="color: #333333">&lt;</span>decltype(df2), <span style="color: #333399; font-weight: bold">double</span>, <span style="color: #333399; font-weight: bold">int</span>, std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(df2);
+
+    assert(result1.get_index().size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(result1.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>).size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(result1.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col&quot;</span>).size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(result1.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>).size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(result1.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">int</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;int_col&quot;</span>).size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(result1.get_index()[<span style="color: #0000DD; font-weight: bold">0</span>] <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">1</span>);
+    assert(result1.get_index()[<span style="color: #0000DD; font-weight: bold">14</span>] <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">14</span>);
+    assert(result1.get_index()[<span style="color: #0000DD; font-weight: bold">15</span>] <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">1</span>);
+    assert(result1.get_index()[<span style="color: #0000DD; font-weight: bold">29</span>] <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">14</span>);
+    assert(std<span style="color: #333333">::</span>isnan(result1.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>)[<span style="color: #0000DD; font-weight: bold">0</span>]));
+    assert(std<span style="color: #333333">::</span>isnan(result1.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>)[<span style="color: #0000DD; font-weight: bold">14</span>]));
+    assert(result1.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>)[<span style="color: #0000DD; font-weight: bold">15</span>] <span style="color: #333333">==</span> <span style="color: #6600EE; font-weight: bold">100.0</span>);
+    assert(result1.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>)[<span style="color: #0000DD; font-weight: bold">29</span>] <span style="color: #333333">==</span> <span style="color: #6600EE; font-weight: bold">116.0</span>);
+    assert(result1.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">0</span>] <span style="color: #333333">==</span> <span style="background-color: #fff0f0">&quot;zz&quot;</span>);
+    assert(result1.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">14</span>] <span style="color: #333333">==</span> <span style="background-color: #fff0f0">&quot;oo&quot;</span>);
+    assert(result1.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">15</span>] <span style="color: #333333">==</span> <span style="background-color: #fff0f0">&quot;zz&quot;</span>);
+    assert(result1.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">int</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;int_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">0</span>] <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">1</span>);
+    assert(result1.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">int</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;int_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">14</span>] <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">13</span>);
+    assert(result1.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">int</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;int_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">15</span>] <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">1</span>);
+
+    <span style="color: #008800; font-weight: bold">auto</span>    result2 <span style="color: #333333">=</span>
+        df1.concat<span style="color: #333333">&lt;</span>decltype(df2), <span style="color: #333399; font-weight: bold">double</span>, <span style="color: #333399; font-weight: bold">int</span>, std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(df2, concat_policy<span style="color: #333333">::</span>common_columns);
+
+    assert(result2.get_index().size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(result2.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col&quot;</span>).size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(result2.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>).size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(result2.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">0</span>] <span style="color: #333333">==</span> <span style="background-color: #fff0f0">&quot;zz&quot;</span>);
+    assert(result2.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">14</span>] <span style="color: #333333">==</span> <span style="background-color: #fff0f0">&quot;oo&quot;</span>);
+    assert(result2.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">15</span>] <span style="color: #333333">==</span> <span style="background-color: #fff0f0">&quot;zz&quot;</span>);
+    assert(<span style="color: #333333">!</span> result2.has_column(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>));
+
+    <span style="color: #008800; font-weight: bold">auto</span>    result3 <span style="color: #333333">=</span>
+        df1.concat<span style="color: #333333">&lt;</span>decltype(df2), <span style="color: #333399; font-weight: bold">double</span>, <span style="color: #333399; font-weight: bold">int</span>, std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(df2, concat_policy<span style="color: #333333">::</span>lhs_and_common_columns);
+
+    assert((result2.is_equal<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">int</span>, <span style="color: #333399; font-weight: bold">double</span>, std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(result3)));
+}
+
+<span style="color: #888888">// ----------------------------------------------------------------------------</span>
+
+<span style="color: #008800; font-weight: bold">static</span> <span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">test_concat_view</span>()  {
+
+    std<span style="color: #333333">::</span>cout <span style="color: #333333">&lt;&lt;</span> <span style="background-color: #fff0f0">&quot;</span><span style="color: #666666; font-weight: bold; background-color: #fff0f0">\n</span><span style="background-color: #fff0f0">Testing concat_view( ) ...&quot;</span> <span style="color: #333333">&lt;&lt;</span> std<span style="color: #333333">::</span>endl;
+
+    MyDataFrame df1;
+
+    std<span style="color: #333333">::</span>vector<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">unsigned</span> <span style="color: #333399; font-weight: bold">long</span><span style="color: #333333">&gt;</span>  idxvec <span style="color: #333333">=</span>
+        { <span style="color: #0000DD; font-weight: bold">1UL</span>, <span style="color: #0000DD; font-weight: bold">2UL</span>, <span style="color: #0000DD; font-weight: bold">3UL</span>, <span style="color: #0000DD; font-weight: bold">10UL</span>, <span style="color: #0000DD; font-weight: bold">5UL</span>, <span style="color: #0000DD; font-weight: bold">7UL</span>, <span style="color: #0000DD; font-weight: bold">8UL</span>, <span style="color: #0000DD; font-weight: bold">12UL</span>, <span style="color: #0000DD; font-weight: bold">9UL</span>, <span style="color: #0000DD; font-weight: bold">12UL</span>, <span style="color: #0000DD; font-weight: bold">10UL</span>, <span style="color: #0000DD; font-weight: bold">13UL</span>, <span style="color: #0000DD; font-weight: bold">10UL</span>, <span style="color: #0000DD; font-weight: bold">15UL</span>, <span style="color: #0000DD; font-weight: bold">14UL</span> };
+    std<span style="color: #333333">::</span>vector<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>         dblvec <span style="color: #333333">=</span>
+        { <span style="color: #6600EE; font-weight: bold">0.0</span>, <span style="color: #6600EE; font-weight: bold">15.0</span>, <span style="color: #6600EE; font-weight: bold">14.0</span>, <span style="color: #6600EE; font-weight: bold">2.0</span>, <span style="color: #6600EE; font-weight: bold">1.0</span>, <span style="color: #6600EE; font-weight: bold">12.0</span>, <span style="color: #6600EE; font-weight: bold">11.0</span>, <span style="color: #6600EE; font-weight: bold">8.0</span>, <span style="color: #6600EE; font-weight: bold">7.0</span>, <span style="color: #6600EE; font-weight: bold">6.0</span>, <span style="color: #6600EE; font-weight: bold">5.0</span>, <span style="color: #6600EE; font-weight: bold">4.0</span>, <span style="color: #6600EE; font-weight: bold">3.0</span>, <span style="color: #6600EE; font-weight: bold">9.0</span>, <span style="color: #6600EE; font-weight: bold">10.0</span> };
+    std<span style="color: #333333">::</span>vector<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>         dblvec2 <span style="color: #333333">=</span>
+        { <span style="color: #6600EE; font-weight: bold">100.0</span>, <span style="color: #6600EE; font-weight: bold">101.0</span>, <span style="color: #6600EE; font-weight: bold">102.0</span>, <span style="color: #6600EE; font-weight: bold">103.0</span>, <span style="color: #6600EE; font-weight: bold">104.0</span>, <span style="color: #6600EE; font-weight: bold">105.0</span>, <span style="color: #6600EE; font-weight: bold">106.55</span>, <span style="color: #6600EE; font-weight: bold">107.34</span>, <span style="color: #6600EE; font-weight: bold">1.8</span>, <span style="color: #6600EE; font-weight: bold">111.0</span>, <span style="color: #6600EE; font-weight: bold">112.0</span>, <span style="color: #6600EE; font-weight: bold">113.0</span>, <span style="color: #6600EE; font-weight: bold">114.0</span>, <span style="color: #6600EE; font-weight: bold">115.0</span>, <span style="color: #6600EE; font-weight: bold">116.0</span> };
+    std<span style="color: #333333">::</span>vector<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">int</span><span style="color: #333333">&gt;</span>            intvec <span style="color: #333333">=</span> { <span style="color: #0000DD; font-weight: bold">1</span>, <span style="color: #0000DD; font-weight: bold">2</span>, <span style="color: #0000DD; font-weight: bold">3</span>, <span style="color: #0000DD; font-weight: bold">4</span>, <span style="color: #0000DD; font-weight: bold">5</span>, <span style="color: #0000DD; font-weight: bold">8</span>, <span style="color: #0000DD; font-weight: bold">6</span>, <span style="color: #0000DD; font-weight: bold">7</span>, <span style="color: #0000DD; font-weight: bold">11</span>, <span style="color: #0000DD; font-weight: bold">14</span>, <span style="color: #0000DD; font-weight: bold">9</span>, <span style="color: #0000DD; font-weight: bold">10</span>, <span style="color: #0000DD; font-weight: bold">15</span>, <span style="color: #0000DD; font-weight: bold">12</span>, <span style="color: #0000DD; font-weight: bold">13</span> };
+    std<span style="color: #333333">::</span>vector<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>    strvec <span style="color: #333333">=</span>
+        { <span style="background-color: #fff0f0">&quot;zz&quot;</span>, <span style="background-color: #fff0f0">&quot;bb&quot;</span>, <span style="background-color: #fff0f0">&quot;cc&quot;</span>, <span style="background-color: #fff0f0">&quot;ww&quot;</span>, <span style="background-color: #fff0f0">&quot;ee&quot;</span>, <span style="background-color: #fff0f0">&quot;ff&quot;</span>, <span style="background-color: #fff0f0">&quot;gg&quot;</span>, <span style="background-color: #fff0f0">&quot;hh&quot;</span>, <span style="background-color: #fff0f0">&quot;ii&quot;</span>, <span style="background-color: #fff0f0">&quot;jj&quot;</span>, <span style="background-color: #fff0f0">&quot;kk&quot;</span>, <span style="background-color: #fff0f0">&quot;ll&quot;</span>, <span style="background-color: #fff0f0">&quot;mm&quot;</span>, <span style="background-color: #fff0f0">&quot;nn&quot;</span>, <span style="background-color: #fff0f0">&quot;oo&quot;</span> };
+
+    df1.load_data(std<span style="color: #333333">::</span>move(idxvec),
+                  std<span style="color: #333333">::</span>make_pair(<span style="background-color: #fff0f0">&quot;dbl_col&quot;</span>, dblvec),
+                  std<span style="color: #333333">::</span>make_pair(<span style="background-color: #fff0f0">&quot;int_col&quot;</span>, intvec),
+                  std<span style="color: #333333">::</span>make_pair(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>, strvec));
+
+    MyDataFrame         df2 <span style="color: #333333">=</span> df1;
+    <span style="color: #008800; font-weight: bold">const</span> MyDataFrame   <span style="color: #333333">&amp;</span>const_df1 <span style="color: #333333">=</span> df1;
+    <span style="color: #008800; font-weight: bold">const</span> MyDataFrame   <span style="color: #333333">&amp;</span>const_df2 <span style="color: #333333">=</span> df2;
+
+    df2.load_column(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>, std<span style="color: #333333">::</span>move(dblvec2));
+
+    <span style="color: #008800; font-weight: bold">auto</span>    result1 <span style="color: #333333">=</span>
+        df1.concat_view<span style="color: #333333">&lt;</span>decltype(df2), <span style="color: #333399; font-weight: bold">double</span>, <span style="color: #333399; font-weight: bold">int</span>, std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(df2);
+    <span style="color: #008800; font-weight: bold">auto</span>    const_result1 <span style="color: #333333">=</span>
+        const_df1.concat_view<span style="color: #333333">&lt;</span>decltype(df2), <span style="color: #333399; font-weight: bold">double</span>, <span style="color: #333399; font-weight: bold">int</span>, std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(df2);
+
+    assert(result1.get_index().size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(result1.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col&quot;</span>).size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(result1.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>).size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(result1.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">int</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;int_col&quot;</span>).size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(result1.get_index()[<span style="color: #0000DD; font-weight: bold">0</span>] <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">1</span>);
+    assert(result1.get_index()[<span style="color: #0000DD; font-weight: bold">14</span>] <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">14</span>);
+    assert(result1.get_index()[<span style="color: #0000DD; font-weight: bold">15</span>] <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">1</span>);
+    assert(result1.get_index()[<span style="color: #0000DD; font-weight: bold">29</span>] <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">14</span>);
+    assert(result1.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">0</span>] <span style="color: #333333">==</span> <span style="background-color: #fff0f0">&quot;zz&quot;</span>);
+    assert(result1.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">14</span>] <span style="color: #333333">==</span> <span style="background-color: #fff0f0">&quot;oo&quot;</span>);
+    assert(result1.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">15</span>] <span style="color: #333333">==</span> <span style="background-color: #fff0f0">&quot;zz&quot;</span>);
+    assert(result1.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">int</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;int_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">0</span>] <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">1</span>);
+    assert(result1.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">int</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;int_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">14</span>] <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">13</span>);
+    assert(result1.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">int</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;int_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">15</span>] <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">1</span>);
+
+    assert(const_result1.get_index().size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(const_result1.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col&quot;</span>).size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(const_result1.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>).size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(const_result1.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">int</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;int_col&quot;</span>).size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(const_result1.get_index()[<span style="color: #0000DD; font-weight: bold">0</span>] <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">1</span>);
+    assert(const_result1.get_index()[<span style="color: #0000DD; font-weight: bold">14</span>] <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">14</span>);
+    assert(const_result1.get_index()[<span style="color: #0000DD; font-weight: bold">15</span>] <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">1</span>);
+    assert(const_result1.get_index()[<span style="color: #0000DD; font-weight: bold">29</span>] <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">14</span>);
+    assert(const_result1.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">0</span>] <span style="color: #333333">==</span> <span style="background-color: #fff0f0">&quot;zz&quot;</span>);
+    assert(const_result1.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">14</span>] <span style="color: #333333">==</span> <span style="background-color: #fff0f0">&quot;oo&quot;</span>);
+    assert(const_result1.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">15</span>] <span style="color: #333333">==</span> <span style="background-color: #fff0f0">&quot;zz&quot;</span>);
+    assert(const_result1.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">int</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;int_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">0</span>] <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">1</span>);
+    assert(const_result1.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">int</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;int_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">14</span>] <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">13</span>);
+    assert(const_result1.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">int</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;int_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">15</span>] <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">1</span>);
+
+    <span style="color: #008800; font-weight: bold">auto</span>    result2 <span style="color: #333333">=</span>
+        df2.concat_view<span style="color: #333333">&lt;</span>decltype(df2), <span style="color: #333399; font-weight: bold">double</span>, <span style="color: #333399; font-weight: bold">int</span>, std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(df1, concat_policy<span style="color: #333333">::</span>lhs_and_common_columns);
+    <span style="color: #008800; font-weight: bold">auto</span>    const_result2 <span style="color: #333333">=</span>
+        const_df2.concat_view<span style="color: #333333">&lt;</span>decltype(df2), <span style="color: #333399; font-weight: bold">double</span>, <span style="color: #333399; font-weight: bold">int</span>, std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(df1, concat_policy<span style="color: #333333">::</span>lhs_and_common_columns);
+
+    assert(result2.get_index().size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(result2.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col&quot;</span>).size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(result2.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>).size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(result2.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">0</span>] <span style="color: #333333">==</span> <span style="background-color: #fff0f0">&quot;zz&quot;</span>);
+    assert(result2.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">14</span>] <span style="color: #333333">==</span> <span style="background-color: #fff0f0">&quot;oo&quot;</span>);
+    assert(result2.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">15</span>] <span style="color: #333333">==</span> <span style="background-color: #fff0f0">&quot;zz&quot;</span>);
+    assert(result2.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>).size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">15</span>);
+    assert(result2.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>)[<span style="color: #0000DD; font-weight: bold">0</span>] <span style="color: #333333">==</span> <span style="color: #6600EE; font-weight: bold">100.0</span>);
+    assert(result2.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>)[<span style="color: #0000DD; font-weight: bold">5</span>] <span style="color: #333333">==</span> <span style="color: #6600EE; font-weight: bold">105.0</span>);
+    assert(result2.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>)[<span style="color: #0000DD; font-weight: bold">10</span>] <span style="color: #333333">==</span> <span style="color: #6600EE; font-weight: bold">112.0</span>);
+
+    assert(const_result2.get_index().size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(const_result2.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col&quot;</span>).size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(const_result2.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>).size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(const_result2.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">0</span>] <span style="color: #333333">==</span> <span style="background-color: #fff0f0">&quot;zz&quot;</span>);
+    assert(const_result2.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">14</span>] <span style="color: #333333">==</span> <span style="background-color: #fff0f0">&quot;oo&quot;</span>);
+    assert(const_result2.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">15</span>] <span style="color: #333333">==</span> <span style="background-color: #fff0f0">&quot;zz&quot;</span>);
+    assert(const_result2.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>).size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">15</span>);
+    assert(const_result2.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>)[<span style="color: #0000DD; font-weight: bold">0</span>] <span style="color: #333333">==</span> <span style="color: #6600EE; font-weight: bold">100.0</span>);
+    assert(const_result2.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>)[<span style="color: #0000DD; font-weight: bold">5</span>] <span style="color: #333333">==</span> <span style="color: #6600EE; font-weight: bold">105.0</span>);
+    assert(const_result2.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>)[<span style="color: #0000DD; font-weight: bold">10</span>] <span style="color: #333333">==</span> <span style="color: #6600EE; font-weight: bold">112.0</span>);
+
+    <span style="color: #008800; font-weight: bold">auto</span>    result3 <span style="color: #333333">=</span>
+        df1.concat_view<span style="color: #333333">&lt;</span>decltype(df1), <span style="color: #333399; font-weight: bold">double</span>, <span style="color: #333399; font-weight: bold">int</span>, std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(df2, concat_policy<span style="color: #333333">::</span>all_columns);
+    <span style="color: #008800; font-weight: bold">auto</span>    const_result3 <span style="color: #333333">=</span>
+        const_df1.concat_view<span style="color: #333333">&lt;</span>decltype(df1), <span style="color: #333399; font-weight: bold">double</span>, <span style="color: #333399; font-weight: bold">int</span>, std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(df2, concat_policy<span style="color: #333333">::</span>all_columns);
+
+    assert(result3.get_index().size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(result3.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col&quot;</span>).size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(result3.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>).size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(result3.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>).size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">15</span>);
+    assert(result3.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">0</span>] <span style="color: #333333">==</span> <span style="background-color: #fff0f0">&quot;zz&quot;</span>);
+    assert(result3.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">14</span>] <span style="color: #333333">==</span> <span style="background-color: #fff0f0">&quot;oo&quot;</span>);
+    assert(result3.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">15</span>] <span style="color: #333333">==</span> <span style="background-color: #fff0f0">&quot;zz&quot;</span>);
+    assert(result3.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>).size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">15</span>);
+    assert(result3.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>)[<span style="color: #0000DD; font-weight: bold">0</span>] <span style="color: #333333">==</span> <span style="color: #6600EE; font-weight: bold">100.0</span>);
+    assert(result3.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>)[<span style="color: #0000DD; font-weight: bold">5</span>] <span style="color: #333333">==</span> <span style="color: #6600EE; font-weight: bold">105.0</span>);
+    assert(result3.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>)[<span style="color: #0000DD; font-weight: bold">10</span>] <span style="color: #333333">==</span> <span style="color: #6600EE; font-weight: bold">112.0</span>);
+
+    assert(const_result3.get_index().size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(const_result3.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col&quot;</span>).size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(const_result3.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>).size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">30</span>);
+    assert(const_result3.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>).size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">15</span>);
+    assert(const_result3.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">0</span>] <span style="color: #333333">==</span> <span style="background-color: #fff0f0">&quot;zz&quot;</span>);
+    assert(const_result3.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">14</span>] <span style="color: #333333">==</span> <span style="background-color: #fff0f0">&quot;oo&quot;</span>);
+    assert(const_result3.get_column<span style="color: #333333">&lt;</span>std<span style="color: #333333">::</span>string<span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;str_col&quot;</span>)[<span style="color: #0000DD; font-weight: bold">15</span>] <span style="color: #333333">==</span> <span style="background-color: #fff0f0">&quot;zz&quot;</span>);
+    assert(const_result3.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>).size() <span style="color: #333333">==</span> <span style="color: #0000DD; font-weight: bold">15</span>);
+    assert(const_result3.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>)[<span style="color: #0000DD; font-weight: bold">0</span>] <span style="color: #333333">==</span> <span style="color: #6600EE; font-weight: bold">100.0</span>);
+    assert(const_result3.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>)[<span style="color: #0000DD; font-weight: bold">5</span>] <span style="color: #333333">==</span> <span style="color: #6600EE; font-weight: bold">105.0</span>);
+    assert(const_result3.get_column<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;dbl_col_2&quot;</span>)[<span style="color: #0000DD; font-weight: bold">10</span>] <span style="color: #333333">==</span> <span style="color: #6600EE; font-weight: bold">112.0</span>);
+}
+</pre></div>
+
+  <img src="https://github.com/hosseinmoein/DataFrame/blob/master/docs/LionLookingUp.jpg?raw=true" alt="C++ DataFrame"
+       width="200" height="150" style="float:right"/>
+
+</body>
+</html>
+
+<!--
+Local Variables:
+mode:HTML
+tab-width:4
+c-basic-offset:4
+End:
+-->
