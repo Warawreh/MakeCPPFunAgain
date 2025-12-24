@@ -48,6 +48,50 @@ sudo apt-get update
 sudo apt-get install -y libpq-dev libpqxx-dev
 ```
 
+#### Note (xeus-cling): you may need to explicitly load shared libraries
+
+Unlike a normal compiled C++ binary, xeus-cling JITs each cell into a module that must be able to *link* against `libpqxx`/`libpq`.
+If you see errors like:
+
+- `IncrementalExecutor::executeFunction: symbol ...demangle_type_name... unresolved`
+- or cling failing to resolve pqxx symbols during execution
+
+Load the libraries in a notebook cell *before* including Postgres-dependent headers.
+Prefer loading by library name (portable) and make sure the libraries are discoverable via your environment (e.g. start Jupyter from an activated conda env):
+
+```cpp
+// Prefer conda env libs when CONDA_PREFIX is set (portable across users)
+#pragma cling add_library_path("$CONDA_PREFIX/lib")
+
+// Common system locations (optional but helps on Linux/WSL)
+#pragma cling add_library_path("/usr/lib/x86_64-linux-gnu")
+#pragma cling add_library_path("/usr/local/lib")
+
+// Load by SONAME
+#pragma cling load("libpq.so")
+#pragma cling load("libpqxx.so")
+```
+
+Then (in the same cell or a later cell) include and use the helpers.
+
+#### Optional: condense pragmas into a single include
+
+This repo provides a convenience header you can include in notebooks to avoid repeating many `#pragma cling ...` lines:
+
+```cpp
+#define MCPPFA_NOTEBOOK_ENABLE_PG 1      // optional (Postgres)
+#define MCPPFA_NOTEBOOK_ENABLE_MATPLOT 1 // optional (Matplot++)
+#include "include/mcppfa/notebook_setup.hpp"
+```
+
+It sets up common include paths and (optionally) loads `libpq`/`libpqxx` for Postgres examples and the Matplot++ shared library.
+
+Tip: you can set `PGURI` to avoid hard-coding credentials in notebooks:
+
+```bash
+export PGURI=postgresql://user:pass@localhost:5432/dbname
+```
+
 ### 3) Launch Jupyter
 
 ```bash

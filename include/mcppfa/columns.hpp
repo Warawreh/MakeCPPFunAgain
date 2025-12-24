@@ -8,7 +8,7 @@
 #include <vector>
 
 // Depends on mcppfa::type_name(...) and DataFrame get_columns_info<...>()
-#include "psql_dataframe.hpp"
+#include "type_name.hpp"
 
 namespace mcppfa {
 
