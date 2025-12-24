@@ -67,6 +67,28 @@ std::cout << df << '\n';
 - **cling/xcpp17 header caching**: after editing headers under `include/` or `vendor/`, you may need to restart the notebook kernel and re-run from the include cell.
 - **gnuplot**: Matplot++ uses gnuplot at runtime.
 
+### Troubleshooting
+
+- **`xeus::xinterpreter::display_data(...) unresolved while linking`** (often shows `nlohmann::json_abi_v...` in the symbol): your kernel’s `xeus` binary and the `nlohmann_json` headers it is compiling against are out of sync.
+  - Fix by aligning `nlohmann_json` to the ABI that `libxeus.so` was built with, in the *same conda env as the kernel*.
+
+```bash
+# inside the env that provides your xcpp17 kernel
+nm -D $CONDA_PREFIX/lib/libxeus.so | c++filt | grep 'xinterpreter::display_data' | head -n 1
+
+# example: if it prints json_abi_v3_11_2, align nlohmann_json accordingly
+conda install -c conda-forge -y nlohmann_json=3.11.2
+```
+
+  - Then restart the Jupyter server and restart the notebook kernel.
+
+- **Matplot++ build on Ubuntu/WSL**: building the vendored Matplot++ shared library may require FFTW headers.
+
+```bash
+sudo apt-get update
+sudo apt-get install -y gnuplot libfftw3-dev
+```
+
 ## Setup
 
 See [docs/SETUP_XCPP17.md](docs/SETUP_XCPP17.md).

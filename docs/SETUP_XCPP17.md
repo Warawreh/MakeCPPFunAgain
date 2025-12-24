@@ -27,6 +27,20 @@ conda create -n cpp-notebooks -c conda-forge -y \
 conda activate cpp-notebooks
 ```
 
+### 1.1) Verify the xcpp kernels are installed
+
+Installing `xeus-cling` is what makes the **xcpp** kernels appear (e.g. `xcpp11`, `xcpp14`, `xcpp17`).
+
+```bash
+jupyter kernelspec list
+```
+
+You should see entries similar to:
+
+- `xcpp11` / `xcpp14` / `xcpp17`
+
+If you don’t, double-check that you installed `xeus-cling` into the same environment you’re using.
+
 ### 2) PostgreSQL client libs (optional, for the DB notebook)
 
 ```bash
@@ -38,6 +52,37 @@ sudo apt-get install -y libpq-dev libpqxx-dev
 
 ```bash
 jupyter lab
+```
+
+If you prefer the classic Notebook server (useful for remote/WSL workflows):
+
+```bash
+jupyter-notebook --no-browser --port=8888
+```
+
+Note: the port flag is a single value (e.g. `--port=8888`), not split across arguments.
+
+#### Avoiding “system Jupyter” vs “conda Jupyter” confusion
+
+On some systems (especially WSL/Ubuntu), `apt` can install `/usr/bin/jupyter-notebook` which may *not* match your conda environment.
+Make sure the Jupyter executable you launch comes from your env:
+
+```bash
+which jupyter
+which jupyter-notebook
+```
+
+Both should point under `$CONDA_PREFIX/bin/...`.
+If `jupyter-notebook` still resolves to `/usr/bin/jupyter-notebook`, install it into the env:
+
+```bash
+conda install -n cpp-notebooks -c conda-forge -y notebook
+```
+
+Or launch without relying on shell activation:
+
+```bash
+conda run -n cpp-notebooks jupyter-notebook --no-browser --port=8888
 ```
 
 Open [notebooks/cpp_ga.ipynb](../notebooks/cpp_ga.ipynb) and run cells top-to-bottom.
@@ -89,6 +134,13 @@ jupyter lab
 
 If you want Matplot++ inside xcpp17, build it as a shared library (Linux/macOS recommended):
 
+On Ubuntu/WSL you may need a couple system dependencies for the vendored Matplot++ build (notably FFTW headers):
+
+```bash
+sudo apt-get update
+sudo apt-get install -y gnuplot libfftw3-dev
+```
+
 ```bash
 cd vendor/matplotplusplus
 rm -rf build-xcpp17
@@ -112,3 +164,20 @@ The notebook expects a shared library under:
 
 - If a notebook keeps “not seeing” changes in headers under `include/` or `vendor/`, restart the kernel (cling caches aggressively).
 - If Matplot++ fails at runtime, ensure `gnuplot` is installed and in your PATH.
+- If you use `mamba` and see `critical libmamba Shell not initialized` on `mamba activate`, initialize once per shell:
+
+```bash
+eval "$(mamba shell hook --shell bash)"
+mamba activate cpp-notebooks
+```
+
+To make it permanent for future shells, run `mamba shell init --shell bash` and restart your terminal.
+
+- If you see an error like `xeus::xinterpreter::display_data(...) unresolved while linking` (often showing `nlohmann::json_abi_v...` in the symbol name), your **kernel’s** `xeus` binary and the `nlohmann_json` headers it is compiling against are out of sync.
+  - Fix by ensuring `xeus-cling` and `nlohmann_json` come from the same conda environment (and ideally the same channel, `conda-forge`):
+
+```bash
+conda install -n cpp-notebooks -c conda-forge -y xeus-cling nlohmann_json
+```
+
+  - Then restart the Jupyter server and restart the notebook kernel.
