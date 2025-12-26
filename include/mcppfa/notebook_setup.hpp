@@ -7,9 +7,19 @@
 // Using `#pragma once` would prevent those later feature blocks from running.
 
 // Usage in a notebook cell:
-//   #define MCPPFA_NOTEBOOK_ENABLE_PG 1       // optional
-//   #define MCPPFA_NOTEBOOK_ENABLE_MATPLOT 1  // optional
+//   // Optional opt-outs (defaults are enabled):
+//   //   #define MCPPFA_NOTEBOOK_ENABLE_PG 0
+//   //   #define MCPPFA_NOTEBOOK_ENABLE_MATPLOT 0
 //   #include "include/mcppfa/notebook_setup.hpp"
+
+// Defaults: load optional integrations unless explicitly disabled.
+#ifndef MCPPFA_NOTEBOOK_ENABLE_PG
+#define MCPPFA_NOTEBOOK_ENABLE_PG 1
+#endif
+
+#ifndef MCPPFA_NOTEBOOK_ENABLE_MATPLOT
+#define MCPPFA_NOTEBOOK_ENABLE_MATPLOT 1
+#endif
 
 // --- Base setup (run once) ---
 #ifndef MCPPFA_NOTEBOOK_SETUP_BASE_INCLUDED
@@ -39,7 +49,7 @@
 // --- Optional: Postgres client libs (libpq / libpqxx) ---
 // This is only needed if you use pqxx-backed helpers (e.g. mcppfa::select_to_dataframe with a PG connection string).
 // We keep it opt-in so notebooks that don't use Postgres won't fail on systems without these libs.
-#if defined(MCPPFA_NOTEBOOK_ENABLE_PG) && !defined(MCPPFA_NOTEBOOK_SETUP_PG_INCLUDED)
+#if (MCPPFA_NOTEBOOK_ENABLE_PG) && !defined(MCPPFA_NOTEBOOK_SETUP_PG_INCLUDED)
 #define MCPPFA_NOTEBOOK_SETUP_PG_INCLUDED 1
 
 	// If notebook code requests Postgres helpers, enable the pqxx-backed layer.
@@ -67,7 +77,7 @@
 // --- Optional: Matplot++ shared library ---
 // Matplot++ can be used header-only for some parts, but the notebook examples in this repo expect a shared lib build.
 // We keep it opt-in so notebooks won't error if Matplot++ hasn't been built yet.
-#if defined(MCPPFA_NOTEBOOK_ENABLE_MATPLOT) && !defined(MCPPFA_NOTEBOOK_SETUP_MATPLOT_INCLUDED)
+#if (MCPPFA_NOTEBOOK_ENABLE_MATPLOT) && !defined(MCPPFA_NOTEBOOK_SETUP_MATPLOT_INCLUDED)
 #define MCPPFA_NOTEBOOK_SETUP_MATPLOT_INCLUDED 1
 	#include <matplot/matplot.h>
 	#pragma cling add_library_path("vendor/matplotplusplus/build-xcpp17/source/matplot")
