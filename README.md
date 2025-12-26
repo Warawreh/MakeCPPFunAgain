@@ -82,7 +82,6 @@ Run the PlotPP section in [notebooks/cpp_ga.ipynb](notebooks/cpp_ga.ipynb). If p
   - `vendor/DataFrame-2.0.0/` — C++17-compatible DataFrame release
   - `vendor/matplotplusplus/` — Matplot++ source (optional)
 - `docs/` — documentation
-- `tools/` — local tooling/environment artifacts (optional)
 
 ## PostgreSQL → DataFrame helpers (mcppfa)
 
