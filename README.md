@@ -1,4 +1,4 @@
-# MakeCPPGreatAgain
+# MakeCPPFunAgain
 
 C++ notebooks playground using **xcpp17** (xeus-cling / cling JIT), with:
 
