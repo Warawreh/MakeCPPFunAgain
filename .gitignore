@@ -1,2 +1,8 @@
 tools/
 .vscode/
+secrets.txt
+.hf/
+libtorch/
+*.pt
+*.zip
+libtorch-shared-with-deps-latest.zip

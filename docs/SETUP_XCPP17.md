@@ -10,6 +10,12 @@ This repo is built around the **xcpp17** Jupyter kernel (xeus-cling / cling), wh
 
 > Note: xeus-cling support can vary by OS and environment. If you hit installation issues on Windows, the most reliable path is usually **WSL2**.
 
+## Optional: Hugging Face Hub helpers
+
+If you want to download/upload artifacts from notebooks (via `huggingface-cli`), see:
+
+- [docs/SETUP_HUGGINGFACE_XCPP17.ipynb](SETUP_HUGGINGFACE_XCPP17.ipynb)
+
 ---
 
 ## Linux (recommended, including WSL2)
