@@ -332,6 +332,13 @@ struct DistilBERTForMaskedLMImpl : torch::nn::Module {
         
         return logits;
     }
+
+    // Thin IValue-based wrapper for C++ callers that only have Module*.
+    torch::IValue forward_iv(const std::vector<torch::IValue>& inputs) {
+        torch::Tensor input_ids = inputs.size() > 0 && inputs[0].isTensor() ? inputs[0].toTensor() : torch::Tensor();
+        torch::Tensor attention_mask = inputs.size() > 1 && inputs[1].isTensor() ? inputs[1].toTensor() : torch::Tensor();
+        return forward(input_ids, attention_mask);
+    }
 };
 TORCH_MODULE(DistilBERTForMaskedLM);
 

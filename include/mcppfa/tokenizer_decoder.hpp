@@ -9,6 +9,8 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
+#include <set>
+#include <torch/torch.h>
 
 namespace mcppfa::tokenizer {
 
@@ -16,6 +18,7 @@ namespace mcppfa::tokenizer {
  * Simple tokenizer decoder for HuggingFace tokenizer.json
  * 
  * Parses the vocabulary from tokenizer.json and provides decode functionality.
+ * Automatically detects and handles special tokens (like transformers library).
  * This is a simplified parser - for full tokenizer support, use a proper JSON library.
  */
 class TokenizerDecoder {
@@ -48,19 +51,20 @@ public:
     }
     
     // Decode a sequence of token IDs to text
-    std::string decode(const std::vector<int64_t>& token_ids) const {
+    // Automatically skips special tokens (like transformers does)
+    std::string decode(const std::vector<int64_t>& token_ids, bool skip_special_tokens = true) const {
         std::string result;
         bool first = true;
         
         for (int64_t token_id : token_ids) {
-            std::string token = decode_token(token_id);
-            
-            // Skip special tokens in output (or show them in brackets)
-            if (token == "[CLS]" || token == "[SEP]" || token == "[PAD]") {
-                continue;  // Skip special tokens
+            // Skip special tokens if requested (default behavior, like transformers)
+            if (skip_special_tokens && is_special_token(token_id)) {
+                continue;
             }
             
-            // Handle subword tokens (## prefix means continuation)
+            std::string token = decode_token(token_id);
+            
+            // Handle subword tokens (## prefix means continuation, BERT-style)
             if (!first && token.size() > 2 && token.substr(0, 2) == "##") {
                 // Remove ## prefix and append without space
                 result += token.substr(2);
@@ -80,6 +84,72 @@ public:
     // Get vocabulary size
     size_t vocab_size() const {
         return id_to_token_.size();
+    }
+    
+    // Check if a token ID is a special token
+    bool is_special_token(int64_t token_id) const {
+        return special_token_ids_.find(token_id) != special_token_ids_.end();
+    }
+    
+    // Get special token IDs (for filtering during generation)
+    const std::set<int64_t>& get_special_token_ids() const {
+        return special_token_ids_;
+    }
+    
+    // Mask special tokens in logits (set to -inf, like transformers does)
+    // This prevents special tokens from being sampled during generation
+    torch::Tensor mask_special_tokens(const torch::Tensor& logits) const {
+        // logits: [vocab_size] or [B, vocab_size]
+        auto masked_logits = logits.clone();
+        
+        // Create a mask tensor (1 for special tokens, 0 for regular tokens)
+        auto vocab_size = logits.size(-1);
+        auto mask = torch::zeros({vocab_size}, torch::TensorOptions().dtype(torch::kBool));
+        
+        for (int64_t special_id : special_token_ids_) {
+            if (special_id >= 0 && special_id < vocab_size) {
+                mask[special_id] = true;
+            }
+        }
+        
+        // Set special token logits to -inf (very negative value)
+        masked_logits.masked_fill_(mask, -1e9);
+        
+        return masked_logits;
+    }
+    
+    // Sample next token from logits with special token filtering (like transformers)
+    // Returns the sampled token ID, automatically filtering special tokens
+    int64_t sample_next_token(
+        const torch::Tensor& logits,  // [vocab_size]
+        double temperature = 1.0,
+        int64_t top_k = 50,
+        bool greedy = false) const {
+        
+        // Apply special token masking (like transformers does)
+        auto masked_logits = mask_special_tokens(logits);
+        
+        // Apply temperature
+        if (temperature != 1.0 && temperature > 0.0) {
+            masked_logits = masked_logits / temperature;
+        }
+        
+        if (greedy) {
+            // Greedy: just take argmax
+            return masked_logits.argmax(-1).item<int64_t>();
+        }
+        
+        // Top-k sampling
+        auto topk_result = torch::topk(masked_logits, top_k);
+        auto topk_values = std::get<0>(topk_result);  // [top_k]
+        auto topk_indices = std::get<1>(topk_result);  // [top_k]
+        
+        // Convert to probabilities
+        auto topk_probs = torch::softmax(topk_values, -1);
+        
+        // Sample from top-k
+        auto sampled_idx = topk_probs.multinomial(1);  // [1]
+        return topk_indices[sampled_idx.item<int64_t>()].item<int64_t>();
     }
     
     // Encode text to token IDs (simplified approach - matches Python's tokenizer.encode())
@@ -151,6 +221,37 @@ public:
 private:
     std::map<int64_t, std::string> id_to_token_;
     mutable std::map<std::string, int64_t> token_to_id_;  // Reverse map, built lazily
+    std::set<int64_t> special_token_ids_;  // Set of special token IDs (auto-detected)
+    
+    // Detect if a token string is a special token (like transformers does)
+    bool is_special_token_string(const std::string& token) const {
+        // Special tokens typically start with [ and end with ]
+        if (token.size() >= 3 && token[0] == '[' && token[token.size() - 1] == ']') {
+            // Common special tokens: [CLS], [SEP], [PAD], [UNK], [MASK], etc.
+            return true;
+        }
+        return false;
+    }
+    
+    // Detect and register special tokens from vocabulary
+    void detect_special_tokens() {
+        special_token_ids_.clear();
+        for (const auto& [token_id, token_str] : id_to_token_) {
+            if (is_special_token_string(token_str)) {
+                special_token_ids_.insert(token_id);
+            }
+        }
+        if (!special_token_ids_.empty()) {
+            std::cout << "Detected " << special_token_ids_.size() << " special tokens: ";
+            bool first = true;
+            for (int64_t id : special_token_ids_) {
+                if (!first) std::cout << ", ";
+                std::cout << id_to_token_.at(id);
+                first = false;
+            }
+            std::cout << std::endl;
+        }
+    }
     
     void parse_vocab(const std::string& json_content) {
         // Find the vocab section: "vocab": { ... }
@@ -280,6 +381,9 @@ private:
         }
         
         std::cout << "Loaded " << id_to_token_.size() << " tokens from vocabulary" << std::endl;
+        
+        // Detect special tokens after loading vocabulary
+        detect_special_tokens();
     }
     
     void parse_vocab_fallback(const std::string& json_content) {
@@ -329,6 +433,9 @@ private:
         }
         
         std::cout << "Loaded " << id_to_token_.size() << " tokens from vocabulary (fallback parser)" << std::endl;
+        
+        // Detect special tokens after loading vocabulary
+        detect_special_tokens();
     }
     
     void unescape_string(std::string& str) {

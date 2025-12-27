@@ -5,6 +5,7 @@
 #include "torch_distilbert.hpp"
 #include "safetensors.hpp"
 #include "model_loader.hpp"
+#include "tokenizer_decoder.hpp"
 #include <torch/torch.h>
 #include <fstream>
 #include <iostream>
@@ -325,12 +326,157 @@ public:
     const std::string& weights_path() const { return weights_path_; }
     const std::string& config_path() const { return config_path_; }
 
+    // ===== Text Generation Interface (like Python transformers) =====
+    
+    /**
+     * Reset the generation state with a new prompt.
+     * Encodes the text and initializes internal input_ids.
+     * Similar to Python: model.generate(tokenizer.encode(text), ...)
+     */
+    void reset(mcppfa::tokenizer::TokenizerDecoder& tokenizer, const std::string& text) {
+        input_ids_ = tokenizer.encode(text);
+    }
+    
+    /**
+     * Set the generation state directly from token IDs.
+     * Useful for resuming generation or setting custom initial state.
+     */
+    void set_input_ids(const std::vector<int64_t>& ids) {
+        input_ids_ = ids;
+    }
+    
+    /**
+     * Get the current input_ids state.
+     * Returns the current sequence of token IDs.
+     */
+    const std::vector<int64_t>& get_input_ids() const {
+        return input_ids_;
+    }
+    
+    /**
+     * Generate the next token and update internal state.
+     * This is the main prediction method, similar to Python transformers' generate().
+     * 
+     * @param tokenizer Tokenizer decoder for encoding/decoding and special token handling
+     * @param temperature Sampling temperature (default: 0.8, lower = more conservative)
+     * @param top_k Number of top tokens to sample from (default: 50)
+     * @param greedy If true, use greedy decoding (argmax), else use sampling (default: false)
+     * @param max_seq_len Maximum sequence length before stopping (default: 512)
+     * @return The generated token ID, or -1 if generation should stop
+     * 
+     * Usage:
+     *   bert_model.reset(tokenizer, "The red fox");
+     *   for (int i = 0; i < 50; ++i) {
+     *       int64_t token = bert_model.predict(tokenizer);
+     *       if (token == -1) break;  // Stopped
+     *   }
+     *   std::string result = tokenizer.decode(bert_model.get_input_ids());
+     */
+    int64_t predict(
+        mcppfa::tokenizer::TokenizerDecoder& tokenizer,
+        double temperature = 0.8,
+        int64_t top_k = 50,
+        bool greedy = false,
+        int64_t max_seq_len = 512) {
+        
+        // Check if model is loaded
+        if (!bert_model_ && !distilbert_model_) {
+            throw std::runtime_error("BERTModelWrapper::predict: model not loaded");
+        }
+        
+        // Check if state is initialized
+        if (input_ids_.empty()) {
+            throw std::runtime_error("BERTModelWrapper::predict: input_ids not initialized. Call reset() first.");
+        }
+        
+        // Check sequence length limit
+        int64_t seq_len = static_cast<int64_t>(input_ids_.size());
+        if (seq_len >= max_seq_len) {
+            return -1;  // Signal to stop
+        }
+        
+        // Set model to eval mode via underlying module pointer
+        torch::nn::Module* module = get_module();
+        if (!module) {
+            throw std::runtime_error("BERTModelWrapper::predict: underlying module pointer is null");
+        }
+        module->eval();
+
+        // Prepare input tensor from current input_ids [B=1, T=seq_len]
+        torch::Tensor input_tensor = torch::from_blob(
+            input_ids_.data(),
+            {1, seq_len},
+            torch::TensorOptions().dtype(torch::kInt64)
+        ).clone();
+
+        // Create attention mask (1 for all tokens)
+        torch::Tensor attention_mask = torch::ones(
+            {1, seq_len},
+            torch::TensorOptions().dtype(torch::kInt64)
+        );
+
+        // Forward pass: try calling concrete Impl wrappers via dynamic_cast
+        torch::NoGradGuard no_grad;
+        torch::IValue out_iv;
+        if (auto d_impl = dynamic_cast<mcppfa::torchlm::DistilBERTForMaskedLMImpl*>(module)) {
+            out_iv = d_impl->forward_iv({input_tensor, attention_mask});
+        } else if (auto b_impl = dynamic_cast<mcppfa::torchlm::BERTModelImpl*>(module)) {
+            out_iv = b_impl->forward_iv({input_tensor, attention_mask});
+        } else {
+            throw std::runtime_error("BERTModelWrapper::predict: unknown concrete module type; cannot call forward");
+        }
+
+        // Convert IValue to logits Tensor (handle Tensor or Tuple outputs)
+        torch::Tensor logits;
+        if (out_iv.isTensor()) {
+            logits = out_iv.toTensor();
+        } else if (out_iv.isTuple()) {
+            auto elems = out_iv.toTuple()->elements();
+            if (!elems.empty() && elems[0].isTensor()) {
+                logits = elems[0].toTensor();
+            } else {
+                throw std::runtime_error("BERTModelWrapper::predict: forward() returned tuple with no tensor at index 0");
+            }
+        } else {
+            throw std::runtime_error("BERTModelWrapper::predict: forward() returned unexpected IValue type");
+        }
+        // logits shape expected: [1, seq_len, vocab_size]
+        
+        // Get logits for the last position
+        auto last_logits = logits[0][seq_len - 1];  // [vocab_size]
+        
+        // Use tokenizer's built-in sampling (automatically filters special tokens)
+        // This matches how Python's transformers library handles special tokens
+        int64_t next_token = tokenizer.sample_next_token(
+            last_logits, 
+            temperature, 
+            top_k, 
+            greedy
+        );
+        
+        // Append the predicted token to internal state
+        input_ids_.push_back(next_token);
+        
+        // Check if we should stop (e.g., [SEP] token)
+        if (tokenizer.is_special_token(next_token)) {
+            std::string special_token_str = tokenizer.decode_token(next_token);
+            if (special_token_str == "[SEP]") {
+                return -1;  // Signal to stop
+            }
+        }
+        
+        return next_token;
+    }
+
 private:
     std::shared_ptr<mcppfa::torchlm::BERTModel> bert_model_;
     std::shared_ptr<mcppfa::torchlm::DistilBERTForMaskedLM> distilbert_model_;
     std::string weights_path_;
     std::string config_path_;
     std::string model_name_;
+    
+    // Generation state (like Python transformers maintains internally)
+    std::vector<int64_t> input_ids_;
 };
 
 // BERT Tokenizer wrapper that can load from HuggingFace and save
