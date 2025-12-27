@@ -1,6 +1,7 @@
 #pragma once
 
 #include "columns.hpp"
+#include "huggingface.hpp"
 #include "indexing.hpp"
 #include "print.hpp"
 #include "strings.hpp"
