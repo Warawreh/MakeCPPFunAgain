@@ -10,6 +10,7 @@
 #include <cctype>
 #include <cstdint>
 #include <set>
+#include <stdexcept>
 #include <torch/torch.h>
 
 namespace mcppfa::tokenizer {
@@ -44,7 +45,11 @@ public:
     // Decode a single token ID to text
     std::string decode_token(int64_t token_id) const {
         if (id_to_token_.find(token_id) != id_to_token_.end()) {
-            return id_to_token_.at(token_id);
+            // SentencePiece uses U+2581 ("▁") to represent whitespace.
+            // Replace it to make decoded output human-readable.
+            std::string token = id_to_token_.at(token_id);
+            replace_all(token, u8"▁", " ");
+            return token;
         }
         // Return [UNK] for unknown tokens
         return "[UNK]";
@@ -79,6 +84,45 @@ public:
         }
         
         return result;
+    }
+
+    // Decode a 1D/2D tensor of token IDs to text.
+    // - Accepts CPU/GPU tensors; will move to CPU.
+    // - Flattens to 1D (use slice/index before calling if you need a specific row).
+    // - Supports limiting output length via max_tokens.
+    std::string decode_tensor(
+        const torch::Tensor& token_ids,
+        int max_tokens = 32,
+        bool skip_special_tokens = false) const {
+
+        if (!token_ids.defined()) {
+            return "";
+        }
+
+        auto ids = token_ids.to(torch::kCPU).contiguous();
+        if (ids.scalar_type() != torch::kInt64) {
+            // Try to coerce; many models store ids as int64.
+            ids = ids.to(torch::kInt64);
+        }
+
+        // Flatten to 1D for simple decoding.
+        ids = ids.view({-1});
+
+        const int64_t n = ids.numel();
+        const int64_t limit = (max_tokens <= 0) ? n : std::min<int64_t>(n, static_cast<int64_t>(max_tokens));
+
+        std::vector<int64_t> vec;
+        vec.reserve(static_cast<size_t>(limit));
+        auto acc = ids.accessor<int64_t, 1>();
+        for (int64_t i = 0; i < limit; ++i) {
+            vec.push_back(acc[i]);
+        }
+
+        std::string out = decode(vec, skip_special_tokens);
+        if (n > limit) {
+            out += " ...";
+        }
+        return out;
     }
     
     // Get vocabulary size
@@ -230,7 +274,198 @@ private:
             // Common special tokens: [CLS], [SEP], [PAD], [UNK], [MASK], etc.
             return true;
         }
+        // SentencePiece/T5-style specials: <pad>, </s>, <unk>, <extra_id_0>, ...
+        if (token.size() >= 3 && token[0] == '<' && token[token.size() - 1] == '>') {
+            return true;
+        }
         return false;
+    }
+
+    static void replace_all(std::string& s, const std::string& from, const std::string& to) {
+        if (from.empty()) return;
+        size_t pos = 0;
+        while ((pos = s.find(from, pos)) != std::string::npos) {
+            s.replace(pos, from.size(), to);
+            pos += to.size();
+        }
+    }
+
+    void parse_vocab_object_at(const std::string& json_content, size_t brace_start) {
+        // Parse token: id pairs in an object starting at '{'
+        size_t pos = brace_start + 1;
+        int depth = 1;
+
+        while (pos < json_content.size() && depth > 0) {
+            // Skip whitespace
+            while (pos < json_content.size() &&
+                   (json_content[pos] == ' ' || json_content[pos] == '\n' ||
+                    json_content[pos] == '\t' || json_content[pos] == '\r')) {
+                pos++;
+            }
+
+            if (pos >= json_content.size()) break;
+
+            // Check for closing brace
+            if (json_content[pos] == '}') {
+                depth--;
+                if (depth == 0) break;
+                pos++;
+                continue;
+            }
+
+            // Check for opening brace
+            if (json_content[pos] == '{') {
+                depth++;
+                pos++;
+                continue;
+            }
+
+            // Parse "token": id
+            if (json_content[pos] == '"') {
+                // Extract token (quoted string)
+                size_t token_start = pos + 1;
+                size_t token_end = token_start;
+                bool escaped = false;
+                while (token_end < json_content.size()) {
+                    if (escaped) {
+                        escaped = false;
+                        token_end++;
+                        continue;
+                    }
+                    if (json_content[token_end] == '\\') {
+                        escaped = true;
+                        token_end++;
+                        continue;
+                    }
+                    if (json_content[token_end] == '"') {
+                        break;
+                    }
+                    token_end++;
+                }
+
+                if (token_end >= json_content.size()) break;
+
+                std::string token = json_content.substr(token_start, token_end - token_start);
+                // Unescape common escape sequences
+                unescape_string(token);
+
+                pos = token_end + 1;
+
+                // Skip whitespace and colon
+                while (pos < json_content.size() &&
+                       (json_content[pos] == ' ' || json_content[pos] == ':' ||
+                        json_content[pos] == '\t')) {
+                    pos++;
+                }
+
+                // Extract ID (number)
+                if (pos >= json_content.size()) break;
+
+                size_t id_start = pos;
+                size_t id_end = id_start;
+                while (id_end < json_content.size() &&
+                       json_content[id_end] != ',' &&
+                       json_content[id_end] != '}' &&
+                       json_content[id_end] != ' ' &&
+                       json_content[id_end] != '\n') {
+                    id_end++;
+                }
+
+                if (id_end > id_start) {
+                    try {
+                        int64_t token_id = std::stoll(json_content.substr(id_start, id_end - id_start));
+                        id_to_token_[token_id] = token;
+                    } catch (...) {
+                        // Skip invalid numbers
+                    }
+                }
+
+                pos = id_end;
+                // Skip comma if present
+                if (pos < json_content.size() && json_content[pos] == ',') {
+                    pos++;
+                }
+            } else {
+                pos++;
+            }
+        }
+    }
+
+    void parse_vocab_array_at(const std::string& json_content, size_t bracket_start) {
+        // Parse vocab array format used by Unigram/SentencePiece tokenizers:
+        // "vocab": [["token", score], ["token2", score2], ...]
+        // The implicit token id is the index in the array.
+        size_t pos = bracket_start;
+        int depth = 0;
+        bool expect_token_in_inner = false;
+        std::string current_token;
+        int64_t next_id = 0;
+
+        while (pos < json_content.size()) {
+            char c = json_content[pos];
+
+            if (c == '[') {
+                depth++;
+                if (depth == 2) {
+                    expect_token_in_inner = true;
+                    current_token.clear();
+                }
+                pos++;
+                continue;
+            }
+
+            if (c == ']') {
+                if (depth == 2) {
+                    if (!current_token.empty()) {
+                        id_to_token_[next_id++] = current_token;
+                    }
+                    current_token.clear();
+                    expect_token_in_inner = false;
+                }
+                depth--;
+                pos++;
+                if (depth <= 0) break; // finished outer array
+                continue;
+            }
+
+            if (depth == 2 && expect_token_in_inner) {
+                // Skip whitespace and commas
+                if (c == ' ' || c == '\n' || c == '\t' || c == '\r' || c == ',') {
+                    pos++;
+                    continue;
+                }
+                if (c == '"') {
+                    // Parse the first string element in the inner array
+                    size_t token_start = pos + 1;
+                    size_t token_end = token_start;
+                    bool escaped = false;
+                    while (token_end < json_content.size()) {
+                        if (escaped) {
+                            escaped = false;
+                            token_end++;
+                            continue;
+                        }
+                        if (json_content[token_end] == '\\') {
+                            escaped = true;
+                            token_end++;
+                            continue;
+                        }
+                        if (json_content[token_end] == '"') {
+                            break;
+                        }
+                        token_end++;
+                    }
+                    if (token_end >= json_content.size()) break;
+                    current_token = json_content.substr(token_start, token_end - token_start);
+                    unescape_string(current_token);
+                    expect_token_in_inner = false; // ignore score
+                    pos = token_end + 1;
+                    continue;
+                }
+            }
+
+            pos++;
+        }
     }
     
     // Detect and register special tokens from vocabulary
@@ -274,110 +509,28 @@ private:
             parse_vocab_fallback(json_content);
             return;
         }
-        
-        // Find the opening brace after "vocab"
-        size_t brace_start = json_content.find('{', vocab_start);
-        if (brace_start == std::string::npos) {
-            throw std::runtime_error("Cannot find vocab object in tokenizer.json");
+
+        // Determine whether vocab is an object {"token": id, ...} or array [["token", score], ...]
+        size_t colon = json_content.find(':', vocab_start);
+        if (colon == std::string::npos) {
+            throw std::runtime_error("Cannot find ':' after vocab key in tokenizer.json");
         }
-        
-        // Parse token: id pairs
-        size_t pos = brace_start + 1;
-        int depth = 1;
-        
-        while (pos < json_content.size() && depth > 0) {
-            // Skip whitespace
-            while (pos < json_content.size() && 
-                   (json_content[pos] == ' ' || json_content[pos] == '\n' || 
-                    json_content[pos] == '\t' || json_content[pos] == '\r')) {
-                pos++;
-            }
-            
-            if (pos >= json_content.size()) break;
-            
-            // Check for closing brace
-            if (json_content[pos] == '}') {
-                depth--;
-                if (depth == 0) break;
-                pos++;
-                continue;
-            }
-            
-            // Check for opening brace
-            if (json_content[pos] == '{') {
-                depth++;
-                pos++;
-                continue;
-            }
-            
-            // Parse "token": id
-            if (json_content[pos] == '"') {
-                // Extract token (quoted string)
-                size_t token_start = pos + 1;
-                size_t token_end = token_start;
-                bool escaped = false;
-                while (token_end < json_content.size()) {
-                    if (escaped) {
-                        escaped = false;
-                        token_end++;
-                        continue;
-                    }
-                    if (json_content[token_end] == '\\') {
-                        escaped = true;
-                        token_end++;
-                        continue;
-                    }
-                    if (json_content[token_end] == '"') {
-                        break;
-                    }
-                    token_end++;
-                }
-                
-                if (token_end >= json_content.size()) break;
-                
-                std::string token = json_content.substr(token_start, token_end - token_start);
-                // Unescape common escape sequences
-                unescape_string(token);
-                
-                pos = token_end + 1;
-                
-                // Skip whitespace and colon
-                while (pos < json_content.size() && 
-                       (json_content[pos] == ' ' || json_content[pos] == ':' || 
-                        json_content[pos] == '\t')) {
-                    pos++;
-                }
-                
-                // Extract ID (number)
-                if (pos >= json_content.size()) break;
-                
-                size_t id_start = pos;
-                size_t id_end = id_start;
-                while (id_end < json_content.size() && 
-                       json_content[id_end] != ',' && 
-                       json_content[id_end] != '}' &&
-                       json_content[id_end] != ' ' &&
-                       json_content[id_end] != '\n') {
-                    id_end++;
-                }
-                
-                if (id_end > id_start) {
-                    try {
-                        int64_t token_id = std::stoll(json_content.substr(id_start, id_end - id_start));
-                        id_to_token_[token_id] = token;
-                    } catch (...) {
-                        // Skip invalid numbers
-                    }
-                }
-                
-                pos = id_end;
-                // Skip comma if present
-                if (pos < json_content.size() && json_content[pos] == ',') {
-                    pos++;
-                }
-            } else {
-                pos++;
-            }
+        size_t pos = colon + 1;
+        while (pos < json_content.size() &&
+               (json_content[pos] == ' ' || json_content[pos] == '\n' ||
+                json_content[pos] == '\t' || json_content[pos] == '\r')) {
+            pos++;
+        }
+        if (pos >= json_content.size()) {
+            throw std::runtime_error("Unexpected end after vocab key in tokenizer.json");
+        }
+
+        if (json_content[pos] == '{') {
+            parse_vocab_object_at(json_content, pos);
+        } else if (json_content[pos] == '[') {
+            parse_vocab_array_at(json_content, pos);
+        } else {
+            throw std::runtime_error("Unsupported vocab format in tokenizer.json (expected '{' or '[')");
         }
         
         std::cout << "Loaded " << id_to_token_.size() << " tokens from vocabulary" << std::endl;

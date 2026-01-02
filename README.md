@@ -22,6 +22,7 @@ C++ notebooks playground using **xcpp17** (xeus-cling / cling JIT), with:
 - Open and run the notebooks:
   - [notebooks/cpp_ga.ipynb](notebooks/cpp_ga.ipynb) (DataFrame + PostgreSQL + plotting)
   - [notebooks/pg_dataframe_workflow.ipynb](notebooks/pg_dataframe_workflow.ipynb) (end-to-end DB→DataFrame workflow + validation)
+  - [notebooks/t5_pretrain.ipynb](notebooks/t5_pretrain.ipynb) (T5-style **one-token** fine-tuning in pure C++ with LibTorch)
   - [notebooks/AOC_CPP_TEST/problems.ipynb](notebooks/AOC_CPP_TEST/problems.ipynb) (mcppfa helper examples)
   - [docs/SETUP_HUGGINGFACE_XCPP17.ipynb](docs/SETUP_HUGGINGFACE_XCPP17.ipynb) (Complete BERT fine-tuning workflow: Load → Inference (Before) → Fine-tune → Inference (After) → Save → Upload)
 
@@ -62,6 +63,34 @@ The [SETUP_HUGGINGFACE_XCPP17.ipynb](docs/SETUP_HUGGINGFACE_XCPP17.ipynb) notebo
 - `include/mcppfa/tokenizer_decoder.hpp`
   - `TokenizerDecoder`: Encode/decode text using HuggingFace tokenizer.json
   - Supports vocabulary parsing and token ID mapping
+
+## T5 one-token fine-tuning (pure C++ notebook)
+
+The notebook [notebooks/t5_pretrain.ipynb](notebooks/t5_pretrain.ipynb) is a focused demo that fine-tunes a small T5-style model for a **one-token classification target**.
+
+### Key points
+
+- **One-token objective**: training predicts only 1 output token (decoder length is fixed to `1`).
+- **Fast training**: tokenizes each split once into tensors, then trains/evaluates in mini-batches (no per-row re-tokenization).
+- **Tokenizer/model vocab correctness**:
+  - `spiece.model` can be small (e.g., 128 pieces), but Hugging Face tokenizers often add tokens via `tokenizer_config.json`.
+  - The notebook treats the repo as a **tokenizer-assets repo only** and merges `added_tokens_decoder` into `SentencePieceLite` so token IDs match.
+  - The model is initialized with the *effective* vocab size after merging.
+- **Live progress output**: the notebook disables stdout/stderr buffering and the trainer flushes after key prints so you can see where it reached while running.
+
+### Main headers involved
+
+- `include/mcppfa/hf_trainer.hpp`
+  - HF-style `TrainingArguments` + `Trainer<ModelT>` used by the notebook.
+- `include/mcppfa/sentencepiece_lite.hpp`
+  - `piece_for_id(...)` for vocab inspection.
+  - `add_piece_with_id(...)` to merge HF added tokens at explicit IDs.
+
+### Notebook knobs (what they mean)
+
+- `g_max_len`: max encoder input length in tokens (truncate/pad the input sequence to this length).
+- `g_batch_size`, `g_lr`, `g_epochs`: standard training controls.
+- `g_pad_id`: derived from tokenizer assets; used for padding input and decoder inputs.
 
 ### Setup Requirements
 

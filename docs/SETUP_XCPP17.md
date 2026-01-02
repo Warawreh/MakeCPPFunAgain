@@ -213,6 +213,20 @@ The notebook expects a shared library under:
 ## Troubleshooting
 
 - If a notebook keeps “not seeing” changes in headers under `include/` or `vendor/`, restart the kernel (cling caches aggressively).
+- If notebook output only appears **after** a long-running cell completes, stdout/stderr may be buffered by the kernel.
+  - Add this near the top of your notebook (after `#include <iostream>` / `#include <cstdio>`):
+
+```cpp
+// Force stdout/stderr to stream while the cell runs
+std::cout.setf(std::ios::unitbuf);
+std::cerr.setf(std::ios::unitbuf);
+setvbuf(stdout, nullptr, _IONBF, 0);
+setvbuf(stderr, nullptr, _IONBF, 0);
+
+// If you use printf a lot, flush after important milestones
+std::printf("...\n");
+std::fflush(stdout);
+```
 - If Matplot++ fails at runtime, ensure `gnuplot` is installed and in your PATH.
 - If you use `mamba` and see `critical libmamba Shell not initialized` on `mamba activate`, initialize once per shell:
 
