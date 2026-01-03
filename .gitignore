@@ -6,3 +6,5 @@ libtorch/
 *.pt
 *.zip
 libtorch-shared-with-deps-latest.zip
+notebooks/AG News Classification/archive/
+*/*.h5
