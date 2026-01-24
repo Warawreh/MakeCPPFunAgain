@@ -1,15 +1,15 @@
-# Chapter 1 — C++ Fundamentals (xcpp)
+# Chapter 1 — Stage 1 Basics (xcpp)
 
-This chapter covers the C++ fundamentals using xcpp (xeus-cling) notebooks.
+This chapter focuses on **Stage 1**: hello world, variables, types, and basic I/O. Some notebooks are marked as **optional previews** for later stages.
 
 ## Lessons
 1. Tooling & notebook workflow
-2. Types, variables, expressions, control flow
-3. Functions and overloading
-4. Memory basics, references, const, RAII
-5. Core containers: string, vector, array
+2. Basics: variables, types, and output
+3. Mini project: greeting & calculator
+4. Optional preview: references & lifetime
+5. Optional preview: containers
 6. Streams and formatting
-7. Errors: exceptions and assertions
+7. Optional preview: errors & assertions
 
 ## Files
 - Notes in course/chapter-1/notes

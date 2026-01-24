@@ -1,16 +1,23 @@
-# 02 — Types, variables, expressions, control flow
+# 02 — Basics: Hello World, Variables, Types, I/O
 
 ## Goals
-- Learn basic C++ types and literals.
-- Use `if`, `switch`, `for`, `while`.
+- Write and run a minimal C++ program in a notebook cell.
+- Declare variables and use basic types.
+- Print values and simple expressions.
 
 ## Topics
-- Integers, floating point, bool, char
-- `auto` and type inference
-- Operators and precedence
-- `if/else`, `switch`
-- Loops: `for`, range-for, `while`
+- `std::cout` for output
+- Variables: `int`, `double`, `bool`, `std::string`
+- Simple arithmetic and expressions
+- Brief use of `auto`
+
+## Notes
+Stage 1 focuses on **fundamentals**. Control flow (loops/conditionals) is introduced in Stage 2. Here we emphasize syntax, variables, and output.
 
 ## Exercises
-- Compute factorial with a `for` loop.
-- Sum only even numbers from 1..100.
+- Modify a greeting to include name and age.
+- Calculate the area of a circle using `radius`.
+
+## Quick quiz (conceptual)
+- Which type should you use for fractional values?
+- What is the output of `3 + 4 * 2`?

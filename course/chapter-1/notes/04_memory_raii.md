@@ -1,14 +1,17 @@
-# 04 — Memory, references, const, RAII
+# 04 — Optional Preview: References, Scope, RAII
 
 ## Goals
-- Understand stack vs heap.
-- Use references and `const` correctly.
+- See how scope affects object lifetime.
+- Understand what a reference is.
 
 ## Topics
-- Stack allocation and scope
-- Heap allocation (`new/delete`) and why to avoid it
-- References vs pointers
-- RAII and resource safety
+- Scope and lifetime (when objects are created/destroyed)
+- References vs values
+- RAII: resources are acquired in constructors and released in destructors
+
+## Notes
+This is a **preview**. Full memory management and RAII appear later. Here we only show the idea in a small example so learners understand why “cleanup happens automatically.”
 
 ## Exercises
-- Create a simple RAII struct that logs on construction/destruction.
+- Add a nested scope and observe destruction order.
+- Make a variable `const` and note what changes.

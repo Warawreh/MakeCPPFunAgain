@@ -1,19 +1,23 @@
 # 01 — Tooling & xcpp workflow
 
 ## Goals
-- Understand how xcpp/xeus-cling notebooks execute C++.
-- Learn include paths and project headers.
+- Understand how xcpp/xeus-cling executes C++ in notebooks.
+- Learn the “edit → run → observe” learning loop.
+- Know how include paths work in this repo.
 
-## Topics
-- Notebook execution model (cell-by-cell).
-- Include paths for this repo.
-- Using `include/mcppfa/notebook_setup.hpp`.
+## How notebooks work
+Jupyter notebooks mix **markdown explanations** with **runnable C++ cells**. With xcpp, each cell is compiled and executed immediately. This gives instant feedback and lets learners change code and re-run without building a whole project.
 
-## Quick start
-```cpp
-#include "include/mcppfa/notebook_setup.hpp"
-```
+**Workflow:**
+1. Read the explanation
+2. Run the example cell
+3. Edit the exercise cell
+4. Re-run and observe the output
+
+## Include paths in this repo
+Project headers live under `include/`. In notebooks, you can add that path once or include only the headers you need. For clean learning cells, prefer including just the headers you use.
 
 ## Exercises
-- Run a cell that prints "hello".
-- Include a header from include/mcppfa and call one function.
+- Run a cell that prints a message.
+- Change the message and re-run.
+- Include a small helper header and call one function.

@@ -1,13 +1,16 @@
-# 05 — Core containers
+# 05 — Optional Preview: Core Containers
 
 ## Goals
-- Use `std::string`, `std::vector`, `std::array`.
+- Get a first look at `std::string`, `std::vector`, and `std::array`.
 
 ## Topics
-- Strings and concatenation
-- Vectors (push_back, size, indexing)
-- Arrays (fixed-size)
+- `std::string` for text
+- `std::vector` for dynamic lists
+- `std::array` for fixed-size collections
+
+## Notes
+Containers are expanded in Stage 3. Here we just preview the syntax so students recognize them when they appear later.
 
 ## Exercises
 - Reverse a string.
-- Compute average of a vector of numbers.
+- Compute an average from a vector of numbers.
