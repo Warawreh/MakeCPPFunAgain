@@ -1,0 +1,6 @@
+/home/warawreh/MakeCPPFunAgain/build/CMakeFiles/edit_cache.dir
+/home/warawreh/MakeCPPFunAgain/build/CMakeFiles/rebuild_cache.dir
+/home/warawreh/MakeCPPFunAgain/build/CMakeFiles/list_install_components.dir
+/home/warawreh/MakeCPPFunAgain/build/CMakeFiles/install.dir
+/home/warawreh/MakeCPPFunAgain/build/CMakeFiles/install/local.dir
+/home/warawreh/MakeCPPFunAgain/build/CMakeFiles/install/strip.dir

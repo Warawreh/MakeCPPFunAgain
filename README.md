@@ -19,12 +19,54 @@ C++ notebooks playground using **xcpp17** (xeus-cling / cling JIT), with:
 ## Quick start
 
 - Read the setup guide: [docs/SETUP_XCPP17.md](docs/SETUP_XCPP17.md)
+- Use the **conda/mamba** environment (e.g., `cpp-notebooks`) for Jupyter/xcpp.
 - Open and run the notebooks:
   - [notebooks/cpp_ga.ipynb](notebooks/cpp_ga.ipynb) (DataFrame + PostgreSQL + plotting)
   - [notebooks/pg_dataframe_workflow.ipynb](notebooks/pg_dataframe_workflow.ipynb) (end-to-end DB→DataFrame workflow + validation)
   - [notebooks/t5_pretrain.ipynb](notebooks/t5_pretrain.ipynb) (T5-style **one-token** fine-tuning in pure C++ with LibTorch)
   - [notebooks/AOC_CPP_TEST/problems.ipynb](notebooks/AOC_CPP_TEST/problems.ipynb) (mcppfa helper examples)
   - [docs/SETUP_HUGGINGFACE_XCPP17.ipynb](docs/SETUP_HUGGINGFACE_XCPP17.ipynb) (Complete BERT fine-tuning workflow: Load → Inference (Before) → Fine-tune → Inference (After) → Save → Upload)
+
+## Install as a C++ package (CMake)
+
+This repo provides a header-only CMake package target `mcppfa::mcppfa`.
+
+### Install (system default include path)
+This installs to `/usr/local/include` so you can `#include <mcppfa/...>` normally.
+```bash
+cmake -S . -B build
+cmake --build build
+sudo cmake --install build --prefix /usr/local
+```
+
+### Install (user-local)
+```bash
+cmake -S . -B build
+cmake --build build
+cmake --install build --prefix ~/.local
+```
+
+### Use in another project (CMake)
+```cmake
+find_package(mcppfa CONFIG REQUIRED)
+target_link_libraries(your_target PRIVATE mcppfa::mcppfa)
+```
+
+Then in code:
+```cpp
+#include <mcppfa/core/strings.hpp>
+```
+
+### Notes for xcpp/xeus-cling notebooks
+If xcpp does not find headers after install, add the include path when launching Jupyter:
+```bash
+export CPLUS_INCLUDE_PATH=/usr/local/include
+jupyter lab
+```
+Or add this line in a notebook cell:
+```cpp
+#pragma cling add_include_path("/usr/local/include")
+```
 
 ## Hugging Face + LibTorch: Fine-tuning BERT in Pure C++
 

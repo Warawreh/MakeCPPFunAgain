@@ -9,3 +9,4 @@ libtorch-shared-with-deps-latest.zip
 notebooks/AG News Classification/archive/
 */*.h5
 */*/*.h5
+.venv/
